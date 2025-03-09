@@ -21,7 +21,7 @@ export const isUserRejectedError = (errorMessage: any) =>
 
 if (typeof window !== "undefined") {
   posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
-    api_host: "/api/posthog",
+    api_host: "https://posthog.guild.xyz",
     // Capture custom events only
     autocapture: false,
 
@@ -69,12 +69,20 @@ export function CustomPostHogProvider({ children }: { children: ReactNode }) {
 
   const identifyUser = useCallback(
     (userData: User) => {
-      posthog.identify(userData.id.toString(), {
+      const anonymousId = posthog.get_distinct_id()
+
+      const userIdAsString = userData.id.toString()
+
+      posthog.identify(userIdAsString, {
         primaryAddress: userData.addresses.find((a) => a.isPrimary)?.address,
         currentAddress: address,
         walletType,
         wallet: connectorName,
       })
+
+      if (anonymousId !== userIdAsString) {
+        posthog.alias(userIdAsString, anonymousId)
+      }
     },
     [address, connectorName, walletType]
   )
